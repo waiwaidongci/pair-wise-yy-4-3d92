@@ -3,152 +3,116 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>水下考古潜水记录</title>
+  <title>水下考古标签发放补换台</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, "PingFang SC", sans-serif; background: #e8f2f3; color: #183035; }
     header { padding: 18px 24px; background: #fff; border-bottom: 1px solid #c9dadc; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
     h1 { margin: 0; font-size: 26px; }
+    h2 { margin: 14px 0 6px; font-size: 17px; }
     button { border: 0; border-radius: 8px; padding: 10px 13px; background: #1d6c78; color: #fff; font-weight: 800; cursor: pointer; }
     button.secondary { background: #64777b; }
     input, select, textarea { width: 100%; border: 1px solid #c9dadc; border-radius: 6px; padding: 9px; font: inherit; background: #fff; }
-    textarea { min-height: 64px; }
+    input[readonly], input:disabled { background: #f2f6f7; color: #5c7378; }
+    textarea { min-height: 56px; }
     label { display: block; margin: 9px 0 5px; color: #5c7378; font-size: 13px; }
     .app { display: grid; grid-template-columns: 1fr 360px; gap: 16px; padding: 16px; }
     .panel { background: #fff; border: 1px solid #c9dadc; border-radius: 8px; padding: 14px; }
-    .map { position: relative; height: calc(100vh - 128px); min-height: 560px; overflow: hidden; background: radial-gradient(circle at 30% 20%, #5fa8b1, #0f5262 55%, #07333f); border-radius: 8px; border: 1px solid #0c4451; cursor: crosshair; }
+    .map { position: relative; height: calc(100vh - 150px); min-height: 520px; overflow: hidden; background: radial-gradient(circle at 30% 20%, #5fa8b1, #0f5262 55%, #07333f); border-radius: 8px; border: 1px solid #0c4451; cursor: crosshair; }
     .wreck { position: absolute; left: 24%; top: 28%; width: 52%; height: 31%; border: 3px solid rgba(220,235,224,.55); border-radius: 48% 44% 42% 50%; transform: rotate(-9deg); }
     .rib { position: absolute; width: 2px; height: 36%; background: rgba(220,235,224,.35); top: 27%; transform: rotate(-9deg); }
-    .marker { position: absolute; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.7); box-shadow: 0 4px 12px rgba(0,0,0,.35); cursor: pointer; }
+    .marker { position: absolute; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.7); box-shadow: 0 4px 12px rgba(0,0,0,.35); cursor: pointer; padding: 0; }
     .marker.selected { outline: 4px solid rgba(255,234,124,.75); }
+    .marker .dot { position: absolute; right: -4px; top: -4px; width: 11px; height: 11px; border-radius: 50%; background: #f0b429; border: 2px solid #fff; }
     .ceramic { background: #b56c38; } .wood { background: #6c4b2f; } .metal { background: #6e7880; } .unknown { background: #725ca6; }
     .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-    .list { display: grid; gap: 8px; max-height: 330px; overflow: auto; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .list { display: grid; gap: 8px; max-height: 340px; overflow: auto; }
     .item { border: 1px solid #d7e4e5; border-radius: 8px; padding: 10px; cursor: pointer; }
     .item.active { border-color: #1d6c78; background: #eef8f9; }
-    .timeline { display: grid; gap: 8px; max-height: 240px; overflow: auto; }
+    .timeline { display: grid; gap: 8px; max-height: 340px; overflow: auto; }
+    .ledger-row { border: 1px solid #d7e4e5; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+    .ledger-row.off { opacity: .7; background: #fafcfc; }
+    .archive-card summary { cursor: pointer; font-weight: 800; }
     .pill { display: inline-block; padding: 3px 8px; border: 1px solid #c9dadc; border-radius: 999px; font-size: 12px; }
+    .pill.ok { background: #dff0e4; color: #236b3a; border-color: #9cc7a9; }
+    .pill.warn { background: #fcefd0; color: #8a5a12; border-color: #e3c178; }
+    .pill.off { background: #eef2f3; color: #6f7f83; }
+    .thumb { display: block; height: 58px; max-width: 100%; border-radius: 6px; object-fit: cover; margin-top: 6px; }
+    .preview { max-height: 130px; max-width: 100%; border-radius: 6px; margin-top: 6px; }
+    .msg { font-size: 13px; min-height: 18px; margin: 8px 0 2px; font-weight: 700; }
+    .msg.err { color: #b3322c; }
+    .msg.ok { color: #1d6c78; }
+    .replacebox { border-top: 1px dashed #c9dadc; margin-top: 10px; padding-top: 8px; }
     .muted { color: #5c7378; font-size: 13px; }
-    @media (max-width: 980px) { header { display: block; } .app { grid-template-columns: 1fr; } .map { height: 560px; } }
+    @media (max-width: 980px) { header { display: block; } .app { grid-template-columns: 1fr; } .map { height: 520px; } }
   </style>
 </head>
 <body>
   <header>
-    <div><h1>水下考古潜水记录</h1><div class="muted">点击沉船平面图添加标记，筛选、编辑并导出JSON。</div></div>
+    <div><h1>水下考古标签发放补换台</h1><div class="muted">发放、换牌、资料更正一台办理；筛选、潜次时间线与JSON导出照常。</div></div>
     <button id="exportBtn">导出JSON</button>
   </header>
   <main class="app">
     <section class="panel">
       <div class="map" id="map"><div class="wreck"></div></div>
+      <div class="muted" style="margin-top:8px">点击平面图选点即可发放新标签。黄点表示现牌已失效、正在待重印；旧牌在「标签记录」里可查，不进入当前清单。</div>
     </section>
     <aside class="panel">
       <div class="toolbar">
         <select id="filter"><option value="">全部类型</option><option value="ceramic">陶片</option><option value="wood">木构件</option><option value="metal">金属件</option><option value="unknown">未知物</option></select>
-        <select id="view"><option value="list">标记列表</option><option value="timeline">潜次时间线</option></select>
+        <select id="view">
+          <option value="list">当前清单</option>
+          <option value="timeline">潜次时间线</option>
+          <option value="ledger">标签记录（含旧牌）</option>
+          <option value="reprint">待重印队列</option>
+          <option value="archive">存档清单</option>
+        </select>
       </div>
+      <div style="margin-bottom:10px"><input id="query" placeholder="搜索编号 / 潜次 / 领用人"></div>
       <form id="form">
-        <h2>标记信息</h2>
+        <h2 id="formTitle">发放登记</h2>
         <input name="id" type="hidden">
-        <label>编号</label><input name="code" required>
-        <label>类型</label><select name="type"><option value="ceramic">陶片</option><option value="wood">木构件</option><option value="metal">金属件</option><option value="unknown">未知物</option></select>
-        <label>潜次</label><input name="dive" placeholder="例如DIVE-04" required>
-        <label>深度</label><input name="depth" placeholder="例如18.4m" required>
-        <label>朝向</label><input name="orientation" placeholder="例如东北偏北">
-        <label>保存状态</label><input name="condition" placeholder="例如表面附着贝类">
+        <div class="grid2">
+          <div><label>编号</label><input name="code" maxlength="20" required></div>
+          <div><label>类型</label><select name="type"><option value="ceramic">陶片</option><option value="wood">木构件</option><option value="metal">金属件</option><option value="unknown">未知物</option></select></div>
+        </div>
+        <div class="grid2">
+          <div><label>潜次</label><input name="dive" placeholder="例如 DIVE-04" required></div>
+          <div><label>深度</label><input name="depth" placeholder="例如 18.4m" required></div>
+        </div>
+        <label>领用人（随标签登记）</label>
+        <input name="issuedTo" placeholder="例如 林悦" required>
+        <label>照片</label>
+        <input type="file" id="photoFile" accept="image/*">
+        <img id="photoPreview" class="preview" alt="标记照片预览" hidden>
+        <label>朝向</label><input name="orientation" placeholder="例如 东北偏北">
+        <label>保存状态</label><input name="condition" placeholder="例如 表面附着贝类">
         <label>备注</label><textarea name="note"></textarea>
-        <div class="toolbar"><button>保存标记</button><button type="button" id="deleteBtn" class="secondary">删除</button></div>
+        <div id="msg" class="msg"></div>
+        <div class="toolbar">
+          <button id="saveBtn">发放标签</button>
+          <button type="button" id="replaceToggleBtn" class="secondary" hidden>换牌</button>
+          <button type="button" id="deleteBtn" class="secondary" hidden>删除</button>
+        </div>
+        <div id="replaceBox" class="replacebox" hidden>
+          <div class="muted">标签被泥沙磨掉时换发新牌：旧牌的领用人和发放时刻原样保留，新牌接到同一标记；旧牌可查但不进当前清单。</div>
+          <div class="grid2">
+            <div><label>新牌编号</label><input id="newCode" maxlength="20" placeholder="例如 A-021"></div>
+            <div><label>新牌领用人</label><input id="newTo" placeholder="例如 陈松"></div>
+          </div>
+          <div class="toolbar" style="margin-top:8px">
+            <button type="button" id="replaceConfirmBtn">确认换牌</button>
+            <button type="button" id="replaceCancelBtn" class="secondary">取消</button>
+          </div>
+        </div>
       </form>
-      <h2 id="listTitle">标记列表</h2>
+      <h2 id="listTitle">当前清单</h2>
       <div id="list" class="list"></div>
     </aside>
   </main>
-  <script>
-    const map = document.querySelector("#map");
-    const form = document.querySelector("#form");
-    const list = document.querySelector("#list");
-    const filter = document.querySelector("#filter");
-    const view = document.querySelector("#view");
-    const listTitle = document.querySelector("#listTitle");
-    const typeNames = { ceramic: "陶片", wood: "木构件", metal: "金属件", unknown: "未知物" };
-    let marks = JSON.parse(localStorage.getItem("zfl30Marks") || "[]");
-    let pending = null;
-    if (!marks.length) {
-      marks = [
-        { id: crypto.randomUUID(), code: "A-017", type: "ceramic", dive: "DIVE-01", x: 42, y: 46, depth: "17.8m", orientation: "东", condition: "边缘残缺", note: "靠近船肋" },
-        { id: crypto.randomUUID(), code: "W-003", type: "wood", dive: "DIVE-02", x: 58, y: 39, depth: "18.2m", orientation: "西北", condition: "稳定", note: "疑似横梁" }
-      ];
-      save();
-    }
-    for (let i = 0; i < 7; i++) {
-      const rib = document.createElement("div");
-      rib.className = "rib";
-      rib.style.left = 28 + i * 7 + "%";
-      map.appendChild(rib);
-    }
-    function save() { localStorage.setItem("zfl30Marks", JSON.stringify(marks)); }
-    function render() {
-      map.querySelectorAll(".marker").forEach(el => el.remove());
-      const filtered = filter.value ? marks.filter(m => m.type === filter.value) : marks;
-      filtered.forEach(mark => {
-        const el = document.createElement("button");
-        el.className = "marker " + mark.type + (mark.id === form.id.value ? " selected" : "");
-        el.style.left = mark.x + "%";
-        el.style.top = mark.y + "%";
-        el.textContent = mark.code.slice(0, 2);
-        el.onclick = event => { event.stopPropagation(); edit(mark.id); };
-        map.appendChild(el);
-      });
-      if (view.value === "timeline") renderTimeline(filtered);
-      else renderList(filtered);
-    }
-    function renderList(data) {
-      listTitle.textContent = "标记列表";
-      list.className = "list";
-      list.innerHTML = data.map(m => '<div class="item '+(m.id===form.id.value?'active':'')+'" data-id="'+m.id+'"><b>'+m.code+'</b> <span class="pill">'+typeNames[m.type]+'</span><div class="muted">'+m.dive+' · '+m.depth+' · '+m.orientation+'</div><div>'+m.condition+'</div></div>').join("");
-      list.querySelectorAll("[data-id]").forEach(el => el.onclick = () => edit(el.dataset.id));
-    }
-    function renderTimeline(data) {
-      listTitle.textContent = "潜次时间线";
-      list.className = "timeline";
-      const groups = data.reduce((map, item) => ((map[item.dive] ||= []).push(item), map), {});
-      list.innerHTML = Object.entries(groups).map(([dive, items]) => '<div class="item"><b>'+dive+'</b><div class="muted">新增'+items.length+'个标记</div>'+items.map(i => '<div>'+i.code+' · '+typeNames[i.type]+'</div>').join("")+'</div>').join("");
-    }
-    function edit(id) {
-      const mark = marks.find(m => m.id === id);
-      if (!mark) return;
-      for (const [key, value] of Object.entries(mark)) if (form[key]) form[key].value = value;
-      pending = { x: mark.x, y: mark.y };
-      render();
-    }
-    map.addEventListener("click", event => {
-      const rect = map.getBoundingClientRect();
-      pending = { x: Number(((event.clientX - rect.left) / rect.width * 100).toFixed(2)), y: Number(((event.clientY - rect.top) / rect.height * 100).toFixed(2)) };
-      form.reset();
-      form.id.value = "";
-      form.code.value = "M-" + String(marks.length + 1).padStart(3, "0");
-      form.dive.value = "DIVE-01";
-      render();
-    });
-    form.onsubmit = event => {
-      event.preventDefault();
-      if (!pending) pending = { x: 50, y: 50 };
-      const data = Object.fromEntries(new FormData(form).entries());
-      if (data.id) Object.assign(marks.find(m => m.id === data.id), data, pending);
-      else marks.push({ ...data, id: crypto.randomUUID(), ...pending });
-      save(); render();
-    };
-    document.querySelector("#deleteBtn").onclick = () => {
-      if (!form.id.value) return;
-      marks = marks.filter(m => m.id !== form.id.value);
-      form.reset(); pending = null; save(); render();
-    };
-    document.querySelector("#exportBtn").onclick = () => {
-      const blob = new Blob([JSON.stringify(marks, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob); a.download = "dive-marks.json"; a.click(); URL.revokeObjectURL(a.href);
-    };
-    filter.onchange = render; view.onchange = render;
-    render();
-  </script>
+  <script src="js/tags.js"></script>
+  <script src="js/archive.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
